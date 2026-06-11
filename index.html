@@ -78,19 +78,8 @@ textarea:focus{border-color:var(--primary)}
 
 <div class="container">
 
-  <!-- STEP 0: API Key -->
-  <div class="card" id="step0">
-    <div class="card-title">API Key 设置</div>
-    <p class="key-hint">请输入您的 DeepSeek API Key（仅保存在本浏览器中，不会上传到任何服务器）</p>
-    <input type="password" id="apiKeyInput" placeholder="sk-xxxxxxxx">
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="saveKey()">保存</button>
-      <span id="keyStatus" style="font-size:.85rem;color:var(--success);display:flex;align-items:center;gap:6px"></span>
-    </div>
-  </div>
-
   <!-- STEP 1 -->
-  <div class="card hidden" id="step1Card">
+  <div class="card" id="step1Card">
     <div class="card-title"><span class="step-number">1</span> 病情描述</div>
     <textarea id="dialogue" placeholder="请描述患者病情，例如：&#10;&#10;患者男性，35岁。头痛三天，发热（38.5度），咳嗽有黄色痰液。一周前从南方出差回来，无基础病史。"></textarea>
     <div class="btn-row">
@@ -164,23 +153,15 @@ var savedDiagnosis = null;
 var SAMPLE = '患者男性，35岁。头痛三天，发热（体温38.5度），咳嗽有黄色痰液。一周前从南方出差回来。无基础病史，平时身体良好。';
 
 // ── API Key ──
-function getApiKey() { return localStorage.getItem('ds_api_key') || ''; }
-function saveKey() {
-  var k = document.getElementById('apiKeyInput').value.trim();
-  if (!k) return;
-  localStorage.setItem('ds_api_key', k);
-  document.getElementById('keyStatus').textContent = '已保存';
-  document.getElementById('step0').querySelector('input').style.borderColor = 'var(--success)';
-  showApp();
+function getApiKey() { return 'sk-2c795b0e1e174a14934ebf31577d4629'; }
+function unused_placeholder() {
+  // removed API key input step
+  console.log('init');
+  if (false) {
+  }
 }
 function init() {
-  var k = getApiKey();
-  if (k) {
-    document.getElementById('apiKeyInput').value = k;
-    document.getElementById('keyStatus').textContent = '已保存';
-    document.getElementById('step0').querySelector('input').style.borderColor = 'var(--success)';
-    showApp();
-  }
+  showApp();
 }
 function showApp() {
   document.getElementById('step1Card').classList.remove('hidden');
