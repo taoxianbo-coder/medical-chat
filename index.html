@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>对话问诊预诊系统</title>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--primary:#2563eb;--danger:#dc2626;--warn:#d97706;--success:#16a34a;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--shadow:0 1px 3px rgba(0,0,0,.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC",sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+header{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;padding:28px 0;text-align:center}
+header h1{font-size:1.8rem;font-weight:700}
+header p{opacity:.85;margin-top:4px;font-size:.95rem}
+.container{max-width:960px;margin:0 auto;padding:24px 20px 48px}
+.card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:24px;margin-bottom:24px}
+.card-title{font-size:1.05rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+textarea{width:100%;height:160px;border:2px solid var(--border);border-radius:8px;padding:14px;font-size:.95rem;font-family:inherit;resize:vertical;outline:none;background:#fff}
+textarea:focus{border-color:var(--primary)}
+.btn-row{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 24px;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#1d4ed8}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#15803d}
+.btn-purple{background:#7c3aed;color:#fff}
+.btn-purple:hover{background:#6d28d9}
+.btn-outline{background:#fff;color:var(--primary);border:2px solid var(--primary)}
+.btn-outline:hover{background:#eff6ff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.result-grid{grid-template-columns:1fr}}
+.result-card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:20px}
+.result-card.full{grid-column:1/-1}
+.result-card h3{font-size:.95rem;font-weight:600;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+.tag{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.78rem;font-weight:600}
+.tag-high{background:#fef2f2;color:var(--danger)}
+.tag-medium{background:#fffbeb;color:var(--warn)}
+.tag-low{background:#f0fdf4;color:var(--success)}
+.badge{display:inline-block;padding:4px 12px;border-radius:6px;font-size:.85rem;font-weight:700}
+.badge-emergency{background:#fef2f2;color:var(--danger)}
+.badge-watch{background:#fffbeb;color:var(--warn)}
+.badge-routine{background:#f0fdf4;color:var(--success)}
+.symptom-chip{background:#eff6ff;color:#1e40af;padding:4px 12px;border-radius:20px;font-size:.85rem;display:inline-block;margin:3px 6px 3px 0}
+.test-item,.disease-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.test-item:last-child,.disease-item:last-child{border-bottom:none}
+.test-name,.disease-name{font-weight:600}
+.test-reason,.disease-reason{font-size:.85rem;color:var(--muted);margin-top:2px}
+.disclaimer{background:#fffbeb;border-left:4px solid var(--warn);padding:14px 18px;border-radius:0 8px 8px 0;font-size:.88rem;color:#92400e;margin-bottom:20px}
+.summary-text{font-size:1rem;font-weight:500;padding:16px;background:#f8fafc;border-radius:8px}
+.error-box{background:#fef2f2;border:1px solid #fecaca;color:var(--danger);padding:14px;border-radius:8px;margin-bottom:20px;white-space:pre-wrap}
+.loading-box{text-align:center;padding:32px}
+.loading-box .spinner{border-color:var(--primary);border-top-color:transparent;margin:0 auto 12px}
+.hidden{display:none}
+.step-number{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:var(--primary);color:#fff;border-radius:50%;font-size:.85rem;font-weight:700}
+.diagnosis-box{background:#f0fdf4;border-left:4px solid var(--success);padding:18px;border-radius:0 8px 8px 0;margin-top:16px}
+.diagnosis-box h4{color:var(--success);margin-bottom:8px}
+.med-box{border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px}
+.med-box .med-name{font-size:1.05rem;font-weight:700;margin-bottom:6px}
+.med-box .med-brand{font-size:.82rem;color:var(--muted);margin-bottom:8px}
+.med-table{width:100%;border-collapse:collapse;font-size:.88rem}
+.med-table td{padding:4px 12px 4px 0;vertical-align:top}
+.med-table td:first-child{color:var(--muted);white-space:nowrap}
+.med-rationale{margin-top:8px;font-size:.84rem;color:var(--muted)}
+.med-warn{margin-top:6px;padding:8px 12px;background:#fffbeb;border-radius:4px;font-size:.84rem;color:#92400e}
+#step0 .key-hint{font-size:.85rem;color:var(--muted);margin-bottom:8px}
+#step0 input[type=password]{width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:8px;font-size:.9rem;outline:none}
+#step0 input[type=password]:focus{border-color:var(--primary)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>对话问诊预诊系统</h1>
+  <p>输入病情 → 建议检测 → 输入检测结果 → 初诊 → 用药建议</p>
+</header>
+
+<div class="container">
+
+  <!-- STEP 0: API Key -->
+  <div class="card" id="step0">
+    <div class="card-title">API Key 设置</div>
+    <p class="key-hint">请输入您的 DeepSeek API Key（仅保存在本浏览器中，不会上传到任何服务器）</p>
+    <input type="password" id="apiKeyInput" placeholder="sk-xxxxxxxx">
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveKey()">保存</button>
+      <span id="keyStatus" style="font-size:.85rem;color:var(--success);display:flex;align-items:center;gap:6px"></span>
+    </div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="card hidden" id="step1Card">
+    <div class="card-title"><span class="step-number">1</span> 病情描述</div>
+    <textarea id="dialogue" placeholder="请描述患者病情，例如：&#10;&#10;患者男性，35岁。头痛三天，发热（38.5度），咳嗽有黄色痰液。一周前从南方出差回来，无基础病史。"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnAnalyze" onclick="analyze()">开始分析</button>
+      <button class="btn btn-outline" onclick="fillSample()">填入示例</button>
+    </div>
+  </div>
+
+  <div id="errorBox" class="error-box hidden"></div>
+
+  <div id="loadingBox" class="card loading-box hidden">
+    <div class="spinner"></div><p style="color:var(--muted)">正在分析中，请稍候...</p>
+  </div>
+
+  <!-- STEP 1 RESULTS -->
+  <div id="step1Results" class="hidden">
+    <div class="disclaimer" id="disclaimerBox1"></div>
+    <div class="result-grid">
+      <div class="result-card"><h3>提取的症状</h3><div id="symptomsList"></div></div>
+      <div class="result-card"><h3>紧急程度</h3><div id="urgencyBox1"></div></div>
+      <div class="result-card"><h3>建议检测项目</h3><div id="testsList"></div></div>
+      <div class="result-card"><h3>可能的疾病（症状推断）</h3><div id="diseasesList"></div></div>
+      <div class="result-card full"><h3>分析总结</h3><div class="summary-text" id="summaryBox1"></div></div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="card hidden" id="step2Card">
+    <div class="card-title"><span class="step-number">2</span> 检测结果描述</div>
+    <textarea id="testResultsText" placeholder="请描述检测结果，例如：&#10;&#10;血常规：WBC 15.2x10^9/L，中性粒细胞比例 82%，CRP 48mg/L&#10;胸部X光：左下肺斑片状阴影，提示感染&#10;痰培养：肺炎链球菌阳性" style="height:130px"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-success" id="btnDiagnose" onclick="diagnose()">根据检测结果初诊</button>
+    </div>
+  </div>
+
+  <div id="loadingBox2" class="card loading-box hidden">
+    <div class="spinner" style="border-color:var(--success);border-top-color:transparent;margin:0 auto 12px"></div><p style="color:var(--muted)">正在综合诊断中，请稍候...</p>
+  </div>
+
+  <!-- STEP 2 RESULTS -->
+  <div id="step2Results" class="hidden">
+    <div class="result-card full"><h3>初诊结果</h3><div id="diagnosisContent"></div></div>
+    <div class="disclaimer" id="disclaimerBox2" style="margin-top:16px"></div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="card hidden" id="step3Card">
+    <div class="card-title"><span class="step-number">3</span> 用药建议</div>
+    <textarea id="extraNotesText" placeholder="补充信息（选填），例如：&#10;&#10;对青霉素过敏。肝功能轻度异常。" style="height:70px"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-purple" id="btnPrescribe" onclick="prescribe()">生成用药建议</button>
+    </div>
+  </div>
+
+  <div id="loadingBox3" class="card loading-box hidden">
+    <div class="spinner" style="border-color:#7c3aed;border-top-color:transparent;margin:0 auto 12px"></div><p style="color:var(--muted)">正在生成用药建议，请稍候...</p>
+  </div>
+
+  <!-- STEP 3 RESULTS -->
+  <div id="step3Results" class="hidden">
+    <div class="result-card full"><h3>用药建议</h3><div id="medicationContent"></div></div>
+    <div class="disclaimer" id="disclaimerBox3" style="margin-top:16px"></div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──
+var savedAnalysis = null;
+var savedDiagnosis = null;
+var SAMPLE = '患者男性，35岁。头痛三天，发热（体温38.5度），咳嗽有黄色痰液。一周前从南方出差回来。无基础病史，平时身体良好。';
+
+// ── API Key ──
+function getApiKey() { return localStorage.getItem('ds_api_key') || ''; }
+function saveKey() {
+  var k = document.getElementById('apiKeyInput').value.trim();
+  if (!k) return;
+  localStorage.setItem('ds_api_key', k);
+  document.getElementById('keyStatus').textContent = '已保存';
+  document.getElementById('step0').querySelector('input').style.borderColor = 'var(--success)';
+  showApp();
+}
+function init() {
+  var k = getApiKey();
+  if (k) {
+    document.getElementById('apiKeyInput').value = k;
+    document.getElementById('keyStatus').textContent = '已保存';
+    document.getElementById('step0').querySelector('input').style.borderColor = 'var(--success)';
+    showApp();
+  }
+}
+function showApp() {
+  document.getElementById('step1Card').classList.remove('hidden');
+}
+
+// ── API call ──
+async function callDeepSeek(systemPrompt, userMessage) {
+  var key = getApiKey();
+  if (!key) throw new Error('请先设置 API Key');
+  var resp = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
+      max_tokens: 2048,
+      temperature: 0.3,
+    }),
+  });
+  var data = await resp.json();
+  if (!resp.ok) throw new Error(data.error?.message || 'API Error ' + resp.status);
+  var text = data.choices[0].message.content.trim();
+  // clean markdown
+  if (text.startsWith('```')) {
+    text = text.replace(/^```\w*\n?/, '').replace(/\n?```$/, '');
+  }
+  var parsed;
+  try { parsed = JSON.parse(text); }
+  catch(e) {
+    var m = text.match(/\{[\s\S]*\}/);
+    if (m) parsed = JSON.parse(m[0]);
+  }
+  return parsed;
+}
+
+// ── Prompts ──
+var P1 = '你是一位经验丰富的医学预诊助手。根据用户描述的病情信息进行初步分析。\n\n规则：\n1. 仅基于描述中提到的症状分析，不臆测。\n2. 包含免责声明"本分析仅供参考，不能替代专业医疗诊断。请务必前往正规医疗机构就诊。"\n3. 只输出合法JSON：\n\n{"disclaimer":"...","symptoms":[{"name":"症状名","detail":"具体描述"}],"suggested_tests":[{"test_name":"检查项目","reason":"建议原因","priority":"high/medium/low"}],"possible_diseases":[{"name":"疾病名","likelihood":"高/中/低","reasoning":"判断依据","differential_diagnosis":"鉴别疾病"}],"urgency":{"level":"紧急/需关注/常规","recommendation":"就诊建议"},"summary":"一句话总结"}';
+
+var P2 = '你是一位经验丰富的医学诊断专家。根据病情描述和检测结果进行初诊判定。\n\n规则：\n1. 综合分析给出最可能的诊断。\n2. 包含免责声明。\n3. 只输出合法JSON：\n\n{"disclaimer":"...","primary_diagnosis":{"name":"疾病名","confidence":"高/中/低","basis":"诊断依据"},"differential_diagnoses":[{"name":"鉴别疾病","reason":"鉴别原因"}],"treatment_suggestions":"治疗方向建议","additional_tests":[{"test_name":"补充检查","reason":"原因"}],"urgency":{"level":"紧急/需关注/常规","recommendation":"就诊建议"},"summary":"一句话总结"}';
+
+var P3 = '你是一位经验丰富的临床医生。根据病情、检测结果和诊断，给出用药建议。\n\n规则：\n1. 详细说明每种药物的用法用量、服用时间、疗程、注意事项。\n2. 区分处方药和非处方药。\n3. 包含免责声明。\n4. 只输出合法JSON：\n\n{"disclaimer":"本建议仅供参考，请遵医嘱使用。","medications":[{"name":"药物通用名","brand_examples":"商品名","type":"处方药/非处方药","dosage":"单次用量","frequency":"每日几次","timing":"服用时间","duration":"疗程","instructions":"具体用法","precautions":"注意事项和副作用","rationale":"推荐依据"}],"non_drug_advice":["非药物建议"],"summary":"用药总结"}';
+
+// ── UI helpers ──
+function fillSample() { document.getElementById('dialogue').value = SAMPLE; }
+
+function showError(msg) {
+  var b = document.getElementById('errorBox');
+  b.innerHTML = msg.replace(/\n/g, '<br>');
+  b.classList.remove('hidden');
+  b.scrollIntoView({ behavior: 'smooth' });
+}
+
+function setLoading(on, which) {
+  var btnId = which === 2 ? 'btnDiagnose' : which === 3 ? 'btnPrescribe' : 'btnAnalyze';
+  var lbId = which === 2 ? 'loadingBox2' : which === 3 ? 'loadingBox3' : 'loadingBox';
+  var btn = document.getElementById(btnId);
+  var lb = document.getElementById(lbId);
+  btn.disabled = on;
+  lb.classList.toggle('hidden', !on);
+  if (on) document.getElementById('errorBox').classList.add('hidden');
+  var labels = ['', '开始分析', '根据检测结果初诊', '生成用药建议'];
+  btn.innerHTML = on ? '<span class="spinner"></span> 分析中...' : labels[which||1];
+}
+
+function urgencyBadge(l) {
+  var cls = l.indexOf('急')>=0 ? 'badge-emergency' : l.indexOf('关注')>=0 ? 'badge-watch' : 'badge-routine';
+  return '<span class="badge '+cls+'">'+l+'</span>';
+}
+function priorityTag(p) {
+  var m = {high:'tag-high',medium:'tag-medium',low:'tag-low'};
+  var lb = {high:'高',medium:'中',low:'低'};
+  return '<span class="tag '+(m[p]||'tag-low')+'">'+(lb[p]||p)+'</span>';
+}
+function likelihoodTag(l) {
+  if (l.indexOf('高')>=0) return '<span class="tag tag-high">'+l+'</span>';
+  if (l.indexOf('中')>=0) return '<span class="tag tag-medium">'+l+'</span>';
+  return '<span class="tag tag-low">'+l+'</span>';
+}
+
+// ── STEP 1 ──
+async function analyze() {
+  var text = document.getElementById('dialogue').value.trim();
+  if (!text) { showError('请输入病情描述'); return; }
+  if (text.length < 10) { showError('内容过短'); return; }
+  setLoading(true, 1);
+  try {
+    var data = await callDeepSeek(P1, '请分析以下病情描述：\n\n'+text);
+    savedAnalysis = data;
+    savedAnalysis._desc = text;
+    renderStep1(data);
+    document.getElementById('step1Results').classList.remove('hidden');
+    document.getElementById('step2Card').classList.remove('hidden');
+    document.getElementById('step2Card').scrollIntoView({behavior:'smooth'});
+  } catch(e) {
+    showError('分析失败：'+e.message);
+  } finally { setLoading(false, 1); }
+}
+
+function renderStep1(d) {
+  document.getElementById('disclaimerBox1').textContent = d.disclaimer||'本分析仅供参考。';
+  var h='';
+  (d.symptoms||[]).forEach(function(s){h+='<span class="symptom-chip" title="'+(s.detail||'')+'">'+s.name+'</span>';});
+  document.getElementById('symptomsList').innerHTML = h||'<span style="color:var(--muted)">未提取到症状</span>';
+
+  var u=d.urgency;
+  if (u&&u.level) {
+    document.getElementById('urgencyBox1').innerHTML='<p style="font-size:1.1rem;margin-bottom:8px">'+urgencyBadge(u.level)+'</p><p style="color:var(--muted)">'+(u.recommendation||'')+'</p>';
+  }
+
+  h='';
+  (d.suggested_tests||[]).forEach(function(t){h+='<div class="test-item"><div class="test-name">'+priorityTag(t.priority)+' '+t.test_name+'</div><div class="test-reason">'+(t.reason||'')+'</div></div>';});
+  document.getElementById('testsList').innerHTML=h||'<span style="color:var(--muted)">暂无建议</span>';
+
+  h='';
+  (d.possible_diseases||[]).forEach(function(dd){h+='<div class="disease-item"><div class="disease-name">'+likelihoodTag(dd.likelihood)+' '+dd.name+'</div><div class="disease-reason">'+(dd.reasoning||'')+'</div>'+(dd.differential_diagnosis?'<div class="disease-reason">鉴别诊断：'+dd.differential_diagnosis+'</div>':'')+'</div>';});
+  document.getElementById('diseasesList').innerHTML=h||'<span style="color:var(--muted)">暂无预判</span>';
+
+  document.getElementById('summaryBox1').textContent = d.summary||'分析完成。';
+}
+
+// ── STEP 2 ──
+async function diagnose() {
+  var tests = document.getElementById('testResultsText').value.trim();
+  if (!tests||tests.length<5) { showError('请输入检测结果描述'); return; }
+  setLoading(true, 2);
+  try {
+    var data = await callDeepSeek(P2, '病情描述：\n'+(savedAnalysis?._desc||'')+'\n\n检测结果：\n'+tests);
+    savedDiagnosis = data;
+    renderDiagnosis(data);
+    document.getElementById('step2Results').classList.remove('hidden');
+    document.getElementById('step3Card').classList.remove('hidden');
+    document.getElementById('step3Card').scrollIntoView({behavior:'smooth'});
+  } catch(e) {
+    showError('诊断失败：'+e.message);
+  } finally { setLoading(false, 2); }
+}
+
+function renderDiagnosis(d) {
+  document.getElementById('disclaimerBox2').textContent = d.disclaimer||'本分析仅供参考。';
+  var h='';
+  var diag = d.primary_diagnosis;
+  if (diag) {
+    h+='<div class="diagnosis-box"><h4>初步诊断</h4><p style="font-size:1.1rem;font-weight:700;margin-bottom:4px">'+likelihoodTag(diag.confidence)+' '+diag.name+'</p><p style="color:var(--muted)">'+(diag.basis||'')+'</p></div>';
+  }
+  (d.differential_diagnoses||[]).forEach(function(dd){h+='<div class="disease-item"><span class="disease-name">'+dd.name+'</span>'+(dd.reason?'<div class="disease-reason">'+dd.reason+'</div>':'')+'</div>';});
+  if (d.treatment_suggestions) h+='<div style="margin-top:16px"><strong>治疗方向：</strong><br><span style="color:var(--muted)">'+d.treatment_suggestions+'</span></div>';
+  (d.additional_tests||[]).forEach(function(t){h+='<div class="test-item"><span class="test-name">'+t.test_name+'</span><div class="test-reason">'+(t.reason||'')+'</div></div>';});
+  if (d.urgency&&d.urgency.level) h+='<div style="margin-top:16px"><strong>紧急程度：</strong> '+urgencyBadge(d.urgency.level)+' <span style="color:var(--muted)">'+(d.urgency.recommendation||'')+'</span></div>';
+  if (d.summary) h+='<div style="margin-top:16px;padding:14px;background:#f8fafc;border-radius:8px"><strong>结论：</strong>'+d.summary+'</div>';
+  document.getElementById('diagnosisContent').innerHTML = h;
+}
+
+// ── STEP 3 ──
+async function prescribe() {
+  var extra = document.getElementById('extraNotesText').value.trim();
+  setLoading(true, 3);
+  try {
+    var diagText = '';
+    if (savedDiagnosis&&savedDiagnosis.primary_diagnosis) diagText += savedDiagnosis.primary_diagnosis.name;
+    if (savedDiagnosis&&savedDiagnosis.summary) diagText += '。'+savedDiagnosis.summary;
+    var msg = '';
+    if (savedAnalysis&&savedAnalysis._desc) msg += '【病情描述】\n'+savedAnalysis._desc+'\n\n';
+    msg += '【检测结果】\n'+(document.getElementById('testResultsText').value.trim()||'')+'\n\n';
+    if (diagText) msg += '【诊断结论】\n'+diagText+'\n\n';
+    if (extra) msg += '【补充信息】\n'+extra;
+    var data = await callDeepSeek(P3, '请根据以下信息给出用药建议：\n\n'+msg);
+    renderMedications(data);
+    document.getElementById('step3Results').classList.remove('hidden');
+    document.getElementById('step3Results').scrollIntoView({behavior:'smooth'});
+  } catch(e) {
+    showError('用药建议失败：'+e.message);
+  } finally { setLoading(false, 3); }
+}
+
+function renderMedications(d) {
+  document.getElementById('disclaimerBox3').textContent = d.disclaimer||'本建议仅供参考。';
+  var h='';
+  (d.medications||[]).forEach(function(m){
+    var typeBadge = (m.type||'').indexOf('处方')>=0 ? '<span class="badge badge-emergency" style="font-size:.75rem;margin-left:8px">'+m.type+'</span>' : '<span class="badge badge-routine" style="font-size:.75rem;margin-left:8px">'+(m.type||'')+'</span>';
+    h+='<div class="med-box"><div class="med-name">'+m.name+typeBadge+'</div>';
+    if (m.brand_examples) h+='<div class="med-brand">商品名：'+m.brand_examples+'</div>';
+    h+='<table class="med-table">';
+    if(m.dosage) h+='<tr><td>用量：</td><td><strong>'+m.dosage+'</strong></td></tr>';
+    if(m.frequency) h+='<tr><td>频次：</td><td><strong>'+m.frequency+'</strong></td></tr>';
+    if(m.timing) h+='<tr><td>服用时间：</td><td>'+m.timing+'</td></tr>';
+    if(m.duration) h+='<tr><td>疗程：</td><td>'+m.duration+'</td></tr>';
+    if(m.instructions) h+='<tr><td>用法：</td><td>'+m.instructions+'</td></tr>';
+    h+='</table>';
+    if(m.rationale) h+='<div class="med-rationale">依据：'+m.rationale+'</div>';
+    if(m.precautions) h+='<div class="med-warn">'+m.precautions+'</div>';
+    h+='</div>';
+  });
+  var adv = d.non_drug_advice||[];
+  if (adv.length>0) {
+    h+='<div style="margin-top:16px;padding:14px;background:#f0f9ff;border-radius:8px"><strong>非药物建议：</strong><ul style="margin:8px 0 0 20px">';
+    adv.forEach(function(a){h+='<li style="margin-bottom:4px">'+a+'</li>';});
+    h+='</ul></div>';
+  }
+  if (d.summary) h+='<div style="margin-top:16px;padding:14px;background:#f8fafc;border-radius:8px"><strong>总结：</strong>'+d.summary+'</div>';
+  document.getElementById('medicationContent').innerHTML=h||'<span style="color:var(--muted)">暂无用药建议</span>';
+}
+
+// ── Init ──
+init();
+</script>
+</body>
+</html>
